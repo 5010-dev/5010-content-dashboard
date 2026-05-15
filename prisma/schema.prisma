@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Keyword {
+  id                       Int             @id @default(autoincrement())
+  term                     String          @unique
+  category                 String          // "brand" | "product" | "seo"
+  active                   Boolean         @default(true)
+  createdAt                DateTime        @default(now())
+  suggestionGeneratingSince DateTime?      // 제안 생성 중일 때 set. Claude 완료 후 clear.
+  mentions                 Mention[]
+  rankings                 SeoRanking[]
+  suggestion               SeoSuggestion?
+}
+
+model Mention {
+  id          Int             @id @default(autoincrement())
+  sourceType  String          // naver_news | naver_blog | naver_cafe | google_news | x | instagram | threads
+  url         String          @unique
+  title       String
+  content     String
+  author      String?
+  publishedAt DateTime?
+  fetchedAt   DateTime        @default(now())
+  keyword     Keyword         @relation(fields: [keywordId], references: [id], onDelete: Cascade)
+  keywordId   Int
+  assessment  RiskAssessment?
+
+  @@index([sourceType, fetchedAt])
+  @@index([keywordId, fetchedAt])
+}
+
+model RiskAssessment {
+  id                Int      @id @default(autoincrement())
+  mention           Mention  @relation(fields: [mentionId], references: [id], onDelete: Cascade)
+  mentionId         Int      @unique
+  riskLevel         String   // low | medium | high | critical
+  sentiment         String   // positive | neutral | negative
+  summary           String
+  recommendedAction String
+  model             String
+  createdAt         DateTime @default(now())
+
+  @@index([riskLevel, createdAt])
+}
+
+model SeoRanking {
+  id          Int      @id @default(autoincrement())
+  keyword     Keyword  @relation(fields: [keywordId], references: [id], onDelete: Cascade)
+  keywordId   Int
+  engine      String   // naver | google
+  rank        Int?     // null = top 100 밖
+  url         String?  // 발견된 자사 페이지 URL
+  topResults  Json?    // [{rank, url, title, snippet}, ...] 상위 노출 결과 스냅샷
+  marketSize  Int?     // 검색 결과 총 건수 (시장 사이즈 간접 지표)
+  snapshotAt  DateTime @default(now())
+
+  @@index([keywordId, engine, snapshotAt])
+}
+
+model SeoSuggestion {
+  id            Int      @id @default(autoincrement())
+  keyword       Keyword  @relation(fields: [keywordId], references: [id], onDelete: Cascade)
+  keywordId     Int      @unique
+  analysis      String   // 상위 노출의 공통 패턴, 우리가 빠진 이유
+  contentIdeas  Json     // [{title, structure, angle, priority}]
+  strategy      String   // 키워드 전략 / 내부 링크 / 보강 방법
+  basedOnRank   Int?     // 생성 시점의 자사 순위 (null = 100위 밖)
+  basedOnEngine String   // naver | google
+  model         String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model AlertLog {
+  id      Int      @id @default(autoincrement())
+  refType String   // mention | ranking
+  refId   Int
+  channel String   // discord
+  status  String   // sent | failed
+  error   String?
+  sentAt  DateTime @default(now())
+
+  @@index([refType, refId])
+}
