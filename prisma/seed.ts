@@ -67,6 +67,25 @@ const KEYWORDS: Array<{ term: string; category: "brand" | "product" | "seo" }> =
   { term: "자동매매 수익인증", category: "seo" }, // 275건
   { term: "가상자산 자동매매", category: "seo" }, // 329건
   { term: "암호화폐 봇", category: "seo" }, // 479건
+
+  // SEO — 3차 신규: 전략·방어·제품·영문 (매우 쉬움 9 + 쉬움 7)
+  { term: "DCA 자동매매", category: "seo" }, // 16건 — 5010 Quant 전략 직결
+  { term: "그리드 자동매매", category: "seo" }, // 29건 — 5010 Quant 핵심
+  { term: "마틴게일 자동매매", category: "seo" }, // 3건
+  { term: "RSI 자동매매", category: "seo" }, // 31건 — 5010 Indicator 직결
+  { term: "자동매매 환불", category: "seo" }, // 4건 — 방어/신뢰
+  { term: "자동매매 망함", category: "seo" }, // 6건 — 방어
+  { term: "코인 자동매매 실패", category: "seo" }, // 9건 — 방어
+  { term: "가상화폐 매매전략", category: "seo" }, // 28건
+  { term: "python 자동매매", category: "seo" }, // 60건 — 개발자 타겟
+
+  { term: "자동매매 수익률", category: "seo" }, // 422건 — buyer
+  { term: "보조지표 추천", category: "seo" }, // 463건 — 5010 Indicator
+  { term: "btc trading bot", category: "seo" }, // 173건 — 영문
+  { term: "스캘핑 봇", category: "seo" }, // 142건
+  { term: "자동매매 수익", category: "seo" }, // 2,095건 — buyer
+  { term: "트레이딩뷰 사용법", category: "seo" }, // 2,955건 — 5010 Indicator
+  { term: "자동매매 전략", category: "seo" }, // 3,642건 — 슬로건 직결
 ];
 
 async function main() {

@@ -7,9 +7,11 @@ import { notifyRankingDrop } from "@/lib/notifier/discord";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
-// SerpAPI 무료 250건/월 = 약 8건/일이 안전선. 키워드를 오래된 측정 순으로 정렬해
-// 매일 이 한도 안에서만 Google 측정. 평균 키워드당 ~2.5~3일 주기로 갱신됨.
+// SerpAPI 무료 250건/월 = 약 8건/일이 안전선.
+// Google은 마지막 측정 ≥ 7일 지난 키워드만 후보 (또는 한 번도 측정 안 됨).
+// 그 안에서 오래된 순으로 한도까지 측정. SEO 순위는 일 단위로 거의 안 변하기 때문.
 const DAILY_GOOGLE_BUDGET = 8;
+const GOOGLE_STALE_THRESHOLD_MS = 7 * 24 * 60 * 60 * 1000;
 
 function isAuthorized(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
@@ -27,14 +29,17 @@ async function previousRank(keywordId: number, engine: string): Promise<number |
   return prev?.rank ?? undefined;
 }
 
-// 키워드별 마지막 Google 측정 시각을 가져와서 오래된 순으로 정렬.
-// 한 번도 측정 안 한 키워드는 가장 우선.
+// Google 측정 대상 선정:
+// 1. 마지막 측정 ≥ 7일 지난 키워드 (or 한 번도 측정 안 됨) 만 후보
+// 2. 그 중 오래된 순 + 신규 키워드 우선
+// 3. 일일 한도까지 자름
 async function pickGoogleCandidates(
   keywords: Array<{ id: number; term: string }>,
   budget: number,
 ): Promise<Set<number>> {
   if (budget <= 0) return new Set();
 
+  const now = Date.now();
   const lastSnaps = await prisma.seoRanking.findMany({
     where: { engine: "google", keywordId: { in: keywords.map((k) => k.id) } },
     orderBy: { snapshotAt: "desc" },
@@ -43,7 +48,14 @@ async function pickGoogleCandidates(
   });
   const lastByKw = new Map(lastSnaps.map((r) => [r.keywordId, r.snapshotAt.getTime()]));
 
-  const sorted = [...keywords].sort((a, b) => {
+  // 7일 이상 지났거나 한 번도 측정 안 한 것만 후보
+  const eligible = keywords.filter((k) => {
+    const last = lastByKw.get(k.id);
+    return last === undefined || now - last >= GOOGLE_STALE_THRESHOLD_MS;
+  });
+
+  // 오래된 순 (한 번도 안 한 것은 0이라 가장 앞)
+  const sorted = eligible.sort((a, b) => {
     const la = lastByKw.get(a.id) ?? 0;
     const lb = lastByKw.get(b.id) ?? 0;
     return la - lb;
