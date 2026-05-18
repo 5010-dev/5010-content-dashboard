@@ -149,24 +149,30 @@ export async function generateSeoSuggestion(
     "위 상위 결과 중 1~3위 URL을 web_fetch로 직접 읽고 패턴을 파악한 뒤, 최종 JSON을 반환하세요.",
   ].join("\n");
 
-  const resp = await getClient().messages.create({
-    model,
-    max_tokens: 8000,
-    thinking: { type: "adaptive" },
-    output_config: { effort: "high" },
-    system: [
-      {
-        type: "text",
-        text: SYSTEM_PROMPT,
-        cache_control: { type: "ephemeral" },
-      },
-    ],
-    tools: [
-      { type: "web_search_20260209", name: "web_search", max_uses: 3 },
-      { type: "web_fetch_20260209", name: "web_fetch", max_uses: 5 },
-    ],
-    messages: [{ role: "user", content: userBlock }],
-  });
+  const resp = await getClient().messages.create(
+    {
+      model,
+      max_tokens: 6000,
+      thinking: { type: "adaptive" },
+      output_config: { effort: "medium" },
+      system: [
+        {
+          type: "text",
+          text: SYSTEM_PROMPT,
+          cache_control: { type: "ephemeral" },
+        },
+      ],
+      tools: [
+        { type: "web_search_20260209", name: "web_search", max_uses: 2 },
+        { type: "web_fetch_20260209", name: "web_fetch", max_uses: 3 },
+      ],
+      messages: [{ role: "user", content: userBlock }],
+    },
+    {
+      // 무한 hang 방지. 4분 안에 응답 없으면 throw → catch에서 DB에 에러 기록.
+      timeout: 4 * 60 * 1000,
+    },
+  );
 
   if (resp.stop_reason === "pause_turn") {
     throw new Error(
