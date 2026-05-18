@@ -59,10 +59,14 @@ export async function generateSuggestionAction(
     };
   }
 
-  // DB에 "진행 중" 상태 저장 → 페이지 새로고침해도 진행 중인 게 보임
+  // DB에 "진행 중" 상태 저장 + 이전 에러 clear
   await prisma.keyword.update({
     where: { id: keywordId },
-    data: { suggestionGeneratingSince: new Date() },
+    data: {
+      suggestionGeneratingSince: new Date(),
+      suggestionLastError: null,
+      suggestionLastErrorAt: null,
+    },
   });
   revalidatePath("/seo");
 
@@ -108,7 +112,20 @@ export async function generateSuggestionAction(
     revalidatePath("/seo");
     return { status: "ok" };
   } catch (e) {
-    return { status: "error", error: (e as Error).message };
+    const msg = (e as Error).message || "알 수 없는 오류";
+    // 에러를 DB에 영구 기록 → 페이지 다시 와도 표시됨
+    try {
+      await prisma.keyword.update({
+        where: { id: keywordId },
+        data: {
+          suggestionLastError: msg.slice(0, 2000),
+          suggestionLastErrorAt: new Date(),
+        },
+      });
+    } catch {
+      // DB write 실패해도 catch 자체는 무시
+    }
+    return { status: "error", error: msg };
   } finally {
     // 성공/실패 무관하게 진행 중 플래그 해제
     await prisma.keyword.update({

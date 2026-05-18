@@ -156,6 +156,10 @@ export default async function SeoPage() {
       generatingSince: kw.suggestionGeneratingSince
         ? kw.suggestionGeneratingSince.toISOString()
         : null,
+      lastError: kw.suggestionLastError ?? null,
+      lastErrorAt: kw.suggestionLastErrorAt
+        ? kw.suggestionLastErrorAt.toISOString()
+        : null,
     };
   });
 

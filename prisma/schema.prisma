@@ -9,15 +9,17 @@ datasource db {
 }
 
 model Keyword {
-  id                       Int             @id @default(autoincrement())
-  term                     String          @unique
-  category                 String          // "brand" | "product" | "seo"
-  active                   Boolean         @default(true)
-  createdAt                DateTime        @default(now())
-  suggestionGeneratingSince DateTime?      // 제안 생성 중일 때 set. Claude 완료 후 clear.
-  mentions                 Mention[]
-  rankings                 SeoRanking[]
-  suggestion               SeoSuggestion?
+  id                        Int             @id @default(autoincrement())
+  term                      String          @unique
+  category                  String          // "brand" | "product" | "seo"
+  active                    Boolean         @default(true)
+  createdAt                 DateTime        @default(now())
+  suggestionGeneratingSince DateTime?       // 제안 생성 중일 때 set. Claude 완료 후 clear.
+  suggestionLastError       String?         // 마지막 시도 실패 메시지 (성공 시 clear)
+  suggestionLastErrorAt     DateTime?       // 마지막 시도 실패 시각
+  mentions                  Mention[]
+  rankings                  SeoRanking[]
+  suggestion                SeoSuggestion?
 }
 
 model Mention {

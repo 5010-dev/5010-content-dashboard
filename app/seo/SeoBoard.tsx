@@ -50,6 +50,8 @@ export type KeywordCardData = {
   topResultsEngine: "naver" | "google" | null;
   suggestion: SuggestionView | null;
   generatingSince: string | null;
+  lastError: string | null;
+  lastErrorAt: string | null;
 };
 
 type SortKey =
@@ -363,6 +365,41 @@ function Card({ kw, ownDomain }: { kw: KeywordCardData; ownDomain: string }) {
       <div className="suggest-row">
         {generating && kw.generatingSince ? (
           <InProgressBadge startedAt={new Date(kw.generatingSince)} />
+        ) : !sug && kw.lastError ? (
+          <div style={{ width: "100%" }}>
+            <div
+              style={{
+                fontSize: 12,
+                color: "var(--risk-critical)",
+                marginBottom: 6,
+              }}
+            >
+              ⚠ 마지막 시도 {timeAgo(kw.lastErrorAt)} 실패
+            </div>
+            <details style={{ marginBottom: 8 }}>
+              <summary
+                className="faint"
+                style={{ fontSize: 11, cursor: "pointer" }}
+              >
+                에러 사유 보기
+              </summary>
+              <pre
+                style={{
+                  fontSize: 11,
+                  whiteSpace: "pre-wrap",
+                  background: "rgba(210,56,56,0.08)",
+                  padding: 8,
+                  borderRadius: 6,
+                  marginTop: 6,
+                  overflow: "auto",
+                  maxHeight: 200,
+                }}
+              >
+                {kw.lastError}
+              </pre>
+            </details>
+            <SuggestForm keywordId={kw.id} label="다시 시도" variant="ghost" />
+          </div>
         ) : !sug ? (
           <>
             <span className="status">AI 콘텐츠 제안 없음</span>
