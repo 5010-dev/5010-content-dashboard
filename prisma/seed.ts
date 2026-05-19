@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 const KEYWORDS: Array<{ term: string; category: "brand" | "product" | "seo" }> = [
-  // 브랜드 멘션 추적용
+  // 브랜드 멘션 추적용 (영문 변형은 멘션 수집, 한글은 SEO에서)
   { term: "주식회사 오공일공", category: "brand" },
   { term: "오공일공", category: "brand" },
   { term: "팀 오공일공", category: "brand" },
@@ -12,80 +12,59 @@ const KEYWORDS: Array<{ term: string; category: "brand" | "product" | "seo" }> =
   { term: "5010 Quant", category: "brand" },
   { term: "5010 Indicator", category: "brand" },
   { term: "5010 Academy", category: "brand" },
-  { term: "5010 퀀트", category: "brand" }, // 한국어 표기
-  { term: "5010 인디케이터", category: "brand" },
-  { term: "5010 아카데미", category: "brand" },
 
-  // SEO 순위 추적용 — 핵심
-  { term: "자동매매 프로그램", category: "seo" },
-  { term: "비트코인 자동매매", category: "seo" },
-  { term: "이더리움 자동매매", category: "seo" },
-  { term: "퀀트 자동매매", category: "seo" },
+  // SEO — 제품 직결 (블로그 카테고리 1: 제품 업데이트)
   { term: "5010 퀀트", category: "seo" },
+  { term: "5010 르네상스", category: "seo" },
+  { term: "5010 인디케이터", category: "seo" }, // 신규 (기존 brand → seo)
+  { term: "5010 아카데미", category: "seo" }, // 신규 (기존 brand → seo)
+  { term: "트레이딩뷰 인디케이터", category: "seo" },
+  { term: "보조지표 추천", category: "seo" },
 
-  // SEO — 거래소 계열 (코빗 제거)
+  // SEO — 시장 인사이트·트레이딩 전략 (블로그 카테고리 2)
+  { term: "비트코인 매매 전략", category: "seo" },
+  { term: "가상화폐 매매전략", category: "seo" },
+  { term: "자동매매 전략", category: "seo" },
+  { term: "퀀트 자동매매", category: "seo" },
+  { term: "퀀트 트레이딩", category: "seo" },
+  { term: "AI 자동매매", category: "seo" },
+  { term: "코인 단타", category: "seo" },
+  { term: "코인 스캘핑", category: "seo" },
+  { term: "스캘핑 봇", category: "seo" },
+  { term: "트레이딩뷰 사용법", category: "seo" },
+
+  // SEO — 기술 의사결정 (블로그 카테고리 3: 기술적·전략적 의사결정)
+  { term: "DCA 자동매매", category: "seo" },
+  { term: "그리드 자동매매", category: "seo" },
+  { term: "그리드 트레이딩", category: "seo" }, // 신규 — 5010 Quant 핵심 원리
+  { term: "마틴게일 자동매매", category: "seo" },
+  { term: "RSI 자동매매", category: "seo" },
+  { term: "비트코인 그리드봇", category: "seo" },
+  { term: "변동성 거래", category: "seo" }, // 신규 — 동적 그리드 원리
+  { term: "퀀트 알고리즘", category: "seo" }, // 신규 — 회사 블로그 톤
+
+  // SEO — 거래소 (제품 호환성 콘텐츠)
   { term: "업비트 자동매매", category: "seo" },
   { term: "빗썸 자동매매", category: "seo" },
   { term: "바이낸스 자동매매", category: "seo" },
   { term: "바이비트 자동매매", category: "seo" },
 
-  // SEO — 일반 트레이딩
+  // SEO — 카테고리/포괄 (제품 카테고리 정의 글 가능)
+  { term: "자동매매 프로그램", category: "seo" },
+  { term: "비트코인 자동매매", category: "seo" },
+  { term: "이더리움 자동매매", category: "seo" },
   { term: "코인 자동매매", category: "seo" },
-  { term: "코인 봇", category: "seo" },
   { term: "가상화폐 자동매매", category: "seo" },
+  { term: "가상자산 자동매매", category: "seo" },
+  { term: "코인 봇", category: "seo" },
   { term: "트레이딩 봇", category: "seo" },
+  { term: "퀀트 봇", category: "seo" },
+  { term: "암호화폐 봇", category: "seo" },
 
-  // SEO — 투자 스타일
-  { term: "코인 단타", category: "seo" },
-  { term: "코인 스캘핑", category: "seo" },
+  // SEO — 교육/입문 (블로그 카테고리: Academy 연계)
+  { term: "자동매매 뜻", category: "seo" },
   { term: "코인 투자 방법", category: "seo" },
-  { term: "비트코인 매매 전략", category: "seo" },
-
-  // SEO — 1차 신규 (AI/후기/사기 방어/퀀트/트뷰)
-  { term: "AI 자동매매", category: "seo" },
-  { term: "자동매매 후기", category: "seo" },
-  { term: "자동매매 사기", category: "seo" },
-  { term: "퀀트 트레이딩", category: "seo" },
-  { term: "트레이딩뷰 인디케이터", category: "seo" },
-
-  // SEO — 2차 신규: 매우 쉬움 그룹 (phrase 매칭 < 100건). 콘텐츠 1개로 즉시 잡을 만.
-  { term: "코인 봇 추천", category: "seo" }, // 1건
-  { term: "비트코인 자동매매 추천", category: "seo" }, // 3건
-  { term: "5010 르네상스", category: "seo" }, // 5건 — 자체 제품 별칭
-  { term: "자동매매 뜻", category: "seo" }, // 19건
-  { term: "자동매매 봇 추천", category: "seo" }, // 23건
-  { term: "코인 자동매매 사기", category: "seo" }, // 25건 (방어형)
-  { term: "비트코인 그리드봇", category: "seo" }, // 31건 — 5010 Quant 직결
-  { term: "코인 자동매매 추천", category: "seo" }, // 32건
-  { term: "코인 자동매매 후기", category: "seo" }, // 42건
-  { term: "BTC 자동매매", category: "seo" }, // 53건
-  { term: "트레이딩봇 추천", category: "seo" }, // 59건
-
-  // SEO — 2차 신규: 쉬움 그룹 (100~500건)
-  { term: "자동매매 무료체험", category: "seo" }, // 117건 — 30일 무료체험 직결
-  { term: "퀀트 봇", category: "seo" }, // 141건
-  { term: "자동매매 수익인증", category: "seo" }, // 275건
-  { term: "가상자산 자동매매", category: "seo" }, // 329건
-  { term: "암호화폐 봇", category: "seo" }, // 479건
-
-  // SEO — 3차 신규: 전략·방어·제품·영문 (매우 쉬움 9 + 쉬움 7)
-  { term: "DCA 자동매매", category: "seo" }, // 16건 — 5010 Quant 전략 직결
-  { term: "그리드 자동매매", category: "seo" }, // 29건 — 5010 Quant 핵심
-  { term: "마틴게일 자동매매", category: "seo" }, // 3건
-  { term: "RSI 자동매매", category: "seo" }, // 31건 — 5010 Indicator 직결
-  { term: "자동매매 환불", category: "seo" }, // 4건 — 방어/신뢰
-  { term: "자동매매 망함", category: "seo" }, // 6건 — 방어
-  { term: "코인 자동매매 실패", category: "seo" }, // 9건 — 방어
-  { term: "가상화폐 매매전략", category: "seo" }, // 28건
-  { term: "python 자동매매", category: "seo" }, // 60건 — 개발자 타겟
-
-  { term: "자동매매 수익률", category: "seo" }, // 422건 — buyer
-  { term: "보조지표 추천", category: "seo" }, // 463건 — 5010 Indicator
-  { term: "btc trading bot", category: "seo" }, // 173건 — 영문
-  { term: "스캘핑 봇", category: "seo" }, // 142건
-  { term: "자동매매 수익", category: "seo" }, // 2,095건 — buyer
-  { term: "트레이딩뷰 사용법", category: "seo" }, // 2,955건 — 5010 Indicator
-  { term: "자동매매 전략", category: "seo" }, // 3,642건 — 슬로건 직결
+  { term: "자동매매 무료체험", category: "seo" },
 ];
 
 async function main() {
